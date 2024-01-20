@@ -1,0 +1,11 @@
+{
+	"id": "auto-toc",
+	"name": "AutoTOC",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "A plugin for Obsidian that creates an editable table of contents for your notes.",
+	"author": "Adam Carter",
+	"authorUrl": "https://github.com/acarter5",
+	"fundingUrl": "https://github.com/sponsors/acarter5?frequency=one-time&sponsor=acarter5",
+	"isDesktopOnly": false
+}
