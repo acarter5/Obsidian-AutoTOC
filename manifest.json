@@ -1,11 +1,11 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "auto-toc",
+	"name": "AutoTOC",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "This is a sample plugin for Obsidian. This plugin demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "A plugin for Obsidian that creates an editable table of contents for your notes.",
+	"author": "Adam Carter",
+	"authorUrl": "https://github.com/acarter5",
+	"fundingUrl": "https://github.com/sponsors/acarter5?frequency=one-time&sponsor=acarter5",
 	"isDesktopOnly": false
 }
