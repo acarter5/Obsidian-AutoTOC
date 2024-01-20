@@ -30,18 +30,21 @@ export default class MyPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		store.plugin.set(this);
-		this.registerMarkdownCodeBlockProcessor("genmoc", (source, el, ctx) => {
-			console.log("[hf]", { source, ctx });
-			const container = el.createEl("div");
-			this.container = container;
+		this.registerMarkdownCodeBlockProcessor(
+			"autotoc",
+			(source, el, ctx) => {
+				console.log("[hf]", { source, ctx });
+				const container = el.createEl("div");
+				this.container = container;
 
-			this.component = new SvelteView({
-				target: container,
-				props: {
-					ctx,
-				},
-			});
-		});
+				this.component = new SvelteView({
+					target: container,
+					props: {
+						ctx,
+					},
+				});
+			}
+		);
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon(
