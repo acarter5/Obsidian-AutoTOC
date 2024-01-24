@@ -37,15 +37,16 @@
 		}
 	}
 	function handleDndConsider(e) {
+		console.log("[hf] dnd consider", { e, node });
 		if (node) {
 			node.items = e.detail.items;
 		}
 	}
 	async function handleDndFinalize(e) {
+		console.log("[hf] dnd finalize", { e, node });
 		if (node) {
 			node.items = e.detail.items;
 		}
-		console.log(e);
 		nodes = { ...nodes };
 		if (origin) {
 			await plugin.saveData({

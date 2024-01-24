@@ -1,5 +1,10 @@
-import type { Node } from "./types";
+import type { Node, FileNode, DirNode } from "./types";
+import { NodeType } from "./types";
 import type { TAbstractFile } from "obsidian";
+
+function isDirNode(node: FileNode | DirNode): node is DirNode {
+	return node.type === NodeType.DIR;
+}
 
 export const deleteFromNodes = (
 	path: string,
@@ -37,7 +42,7 @@ export const deleteFromNodes = (
 export const updateNodes = (
 	path: string,
 	fileOrDir: Record<string, any>,
-	nodes: Record<string, Node>
+	nodes: Record<string, FileNode | DirNode>
 ) => {
 	const pathParts = path.split("/");
 	const name = pathParts.pop() as string;
@@ -45,9 +50,12 @@ export const updateNodes = (
 	const isDir = !!pages;
 	const parent = pathParts.join("/");
 
+	// create ancestor directory nodes for given file or directory
 	pathParts.reduce((acc: null | string, cur: string) => {
 		const parentId = acc;
 		const id = parentId ? acc + "/" + cur : cur;
+		// some ancestor directory nodes will already have been created
+		// because a node can share a parentNode with other nodes
 		if (!nodes[id]) {
 			nodes[id] = {
 				id,
@@ -55,37 +63,52 @@ export const updateNodes = (
 				expanded: true,
 				name: cur,
 				items: [],
+				type: NodeType.DIR,
 			};
 			if (parentId) {
-				nodes[parentId].items.push({ id });
+				// this will always be a DirNode because it will have been created
+				// as one earlier in the loop
+				const parentNode = nodes[parentId] as DirNode;
+				parentNode.items.push({ id });
 			}
 		}
 
 		return id;
 	}, null);
 
-	const thisNode = {
-		id: path,
-		name,
-		isDir,
-		link: isDir ? undefined : path,
-		expanded: true,
-		items: isDir
-			? pages.values.map((page: { file: TAbstractFile }) => ({
+	const thisNode: FileNode | DirNode = isDir
+		? {
+				id: path,
+				name,
+				isDir: true,
+				type: NodeType.DIR,
+				expanded: true,
+				items: pages.values.map((page: { file: TAbstractFile }) => ({
 					id: page.file.path,
-			  }))
-			: undefined,
-	};
+				})),
+				// eslint-disable-next-line no-mixed-spaces-and-tabs
+		  }
+		: {
+				id: path,
+				name,
+				isDir: false,
+				type: NodeType.FILE,
+				link: path,
+				// eslint-disable-next-line no-mixed-spaces-and-tabs
+		  };
 
-	if (!nodes[thisNode.id] && nodes[parent]) {
-		if (!isDir) {
-			const items = nodes[parent].items;
+	// Add thisNode to nodes
+	if (!nodes[thisNode.id]) {
+		const parentNode = nodes[parent] as DirNode;
+		// Add thisNode to parent-node items array
+		// list files before directories by default
+		if (!isDirNode(thisNode)) {
+			const { items } = parentNode;
 			const firstDirIdx = items
 				.map(({ id }) => nodes[id])
 				.findIndex((node) => node.isDir);
-			console.log("[hf]", { firstDirIdx, items });
 			if (firstDirIdx >= 0) {
-				nodes[parent].items = [
+				parentNode.items = [
 					...items.slice(0, firstDirIdx),
 					{
 						id: thisNode.id,
@@ -93,40 +116,40 @@ export const updateNodes = (
 					...items.slice(firstDirIdx),
 				];
 			} else {
-				nodes[parent].items.push({
+				parentNode.items.push({
 					id: thisNode.id,
 				});
 			}
-			console.log("[hf]", { parentItems: nodes[parent].items });
 		} else {
-			nodes[parent].items.push({
+			parentNode.items.push({
 				id: thisNode.id,
 			});
 		}
-	}
-
-	if (nodes[thisNode.id]) {
-		if (thisNode.items) {
-			nodes[thisNode.id].items.unshift(...thisNode.items);
-		}
-	} else {
 		nodes[thisNode.id] = thisNode;
+		// A DirectoryNode may have already been created when creating ancestor nodes
+		// in that case, we need to populate the node items
+	} else {
+		const existingNode = nodes[thisNode.id];
+		if (isDirNode(existingNode) && isDirNode(thisNode)) {
+			existingNode.items.unshift(...thisNode.items);
+		}
 	}
 
-	if (isDir) {
-		const pageNodes: Node[] = pages.values.map(
+	// If thisNode is a DirNode, create nodes for all the pages in the directory
+	if (isDirNode(thisNode)) {
+		const pageNodes: FileNode[] = pages.values.map(
 			(page: Record<string, any>) => ({
 				id: page.file.path,
 				link: page.file.path,
 				name: page.file.name,
 				isDir: false,
+				type: NodeType.FILE,
 			})
 		);
 		pageNodes.forEach((pageNode) => {
 			nodes[pageNode.id] = pageNode;
 		});
 	}
-	console.log("[hf] doing it", { nodes });
 
 	return nodes;
 };
@@ -137,7 +160,6 @@ export const handleRename = (
 	nodes: Record<string, Node>,
 	skipUpdateParent = false
 ) => {
-	console.log("[hf] handleRename", { oldPath, newPath, nodes });
 	let newNodes = nodes;
 	const pathParts = oldPath.split("/");
 	pathParts.pop();
@@ -186,22 +208,15 @@ export const handleRename = (
 
 	newNodes[newPath] = newNode;
 
-	console.log("[hf] handleRename", { skipUpdateParent });
 	if (!skipUpdateParent) {
 		const parent = newNodes[parentId];
 
 		const parentItems = parent && parent.items;
 
-		console.log("[hf] handleRename", { parentItems });
-
 		const idxInParentItems = parentItems?.findIndex(
 			(ref) => ref.id === oldPath
 		);
-		console.log("[hf] handleRename", {
-			parent,
-			parentItems,
-			idxInParentItems,
-		});
+
 		if (parentItems && idxInParentItems >= 0) {
 			newNodes[parentId] = {
 				...parent,
@@ -212,8 +227,6 @@ export const handleRename = (
 				],
 			};
 		}
-
-		console.log("[hf]", { newParentItems: newNodes[parentId].items });
 	}
 
 	return [newNodes, newNode] as const;
