@@ -8,7 +8,7 @@ function isDirNode(node: FileNode | DirNode): node is DirNode {
 
 export const deleteFromNodes = (
 	path: string,
-	nodes: Record<string, Node>,
+	nodes: Record<string, FileNode | DirNode>,
 	origin: string
 ): Record<string, Node> => {
 	const pathParts = path.split("/");
@@ -17,23 +17,33 @@ export const deleteFromNodes = (
 
 	delete nodes[path];
 
-	const parentItems = nodes[parentId].items;
+	// any ancestor node is by definition a DirNode
+	const parentNode = nodes[parentId] as DirNode;
 
-	const idxInParentItems = parentItems.findIndex((ref) => ref.id === path);
+	const parentItems = parentNode.items;
+
+	// get items idx of deleted file/dir reference in parent node
+	const idxInParentItems = parentItems.findIndex(
+		(childNodeRef) => childNodeRef.id === path
+	);
+	// remove deleted file/dir reference from parent items
 	if (idxInParentItems >= 0) {
-		nodes[parentId].items = [
+		parentNode.items = [
 			...parentItems.slice(0, idxInParentItems),
 			...parentItems.slice(idxInParentItems + 1),
 		];
 	}
 
-	if (nodes[parentId].items.length) {
+	// If the parent node still has children, return
+	if (parentNode.items.length) {
 		return nodes;
 	} else {
 		const newPath = parentId;
+		// if the Parent node is the root directory node, return
 		if (newPath === origin) {
 			return nodes;
 		} else {
+			// delete the parent node b/c it no longer has children and is not the root direcory node
 			return deleteFromNodes(newPath, nodes, origin);
 		}
 	}
