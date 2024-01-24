@@ -167,22 +167,24 @@ export const updateNodes = (
 export const handleRename = (
 	oldPath: string,
 	newPath: string,
-	nodes: Record<string, Node>,
+	nodes: Record<string, FileNode | DirNode>,
 	skipUpdateParent = false
 ) => {
 	let newNodes = nodes;
 	const pathParts = oldPath.split("/");
 	pathParts.pop();
-	const newName = newPath.split("/").pop();
+	const newName = newPath.split("/").pop()?.split(".")[0];
 	const parentId = pathParts.join("/");
 
 	const existingNode = newNodes[oldPath];
+	// delete node with old name
 	delete newNodes[oldPath];
 
 	const newItems: Node["items"] = [];
 
-	if (existingNode.isDir) {
-		existingNode.items?.forEach((item) => {
+	// recursively update all descendant nodes to use new name
+	if (isDirNode(existingNode)) {
+		existingNode.items.forEach((item) => {
 			const { id: oldItemPath } = item;
 			const oldItemNode = newNodes[oldItemPath];
 			const itemName = oldItemPath.split("/").pop();
@@ -192,6 +194,7 @@ export const handleRename = (
 					oldItemPath,
 					newItemPath,
 					{ ...newNodes },
+					// skip updating the parent node b/c we've just done that
 					true
 				);
 				newNodes = updatedNodes;
@@ -202,41 +205,49 @@ export const handleRename = (
 					name: itemName as string,
 					link: newItemPath,
 					isDir: false,
+					type: NodeType.FILE,
 				};
 			}
 			newItems.push({ id: newItemPath });
 		});
 	}
 
-	const newNode = {
-		...existingNode,
-		id: newPath,
-		name: newName as string,
-		link: existingNode.isDir ? undefined : newPath,
-		items: existingNode.isDir ? newItems : undefined,
-	};
+	// add node with new name to nodes
+	const newNode = isDirNode(existingNode)
+		? {
+				...existingNode,
+				id: newPath,
+				name: newName as string,
+				items: newItems,
+				// eslint-disable-next-line no-mixed-spaces-and-tabs
+		  }
+		: {
+				...existingNode,
+				id: newPath,
+				name: newName as string,
+				link: newPath,
+				// eslint-disable-next-line no-mixed-spaces-and-tabs
+		  };
 
 	newNodes[newPath] = newNode;
 
-	if (!skipUpdateParent) {
-		const parent = newNodes[parentId];
+	// update parent items to reference new node
+	const parent = newNodes[parentId] as DirNode;
+	if (!skipUpdateParent && parent) {
+		const parentItems = parent.items;
 
-		const parentItems = parent && parent.items;
-
-		const idxInParentItems = parentItems?.findIndex(
+		const idxInParentItems = parentItems.findIndex(
 			(ref) => ref.id === oldPath
 		);
 
-		if (parentItems && idxInParentItems >= 0) {
-			newNodes[parentId] = {
-				...parent,
-				items: [
-					...parentItems.slice(0, idxInParentItems),
-					{ id: newPath },
-					...parentItems.slice(idxInParentItems + 1),
-				],
-			};
-		}
+		newNodes[parentId] = {
+			...parent,
+			items: [
+				...parentItems.slice(0, idxInParentItems),
+				{ id: newPath },
+				...parentItems.slice(idxInParentItems + 1),
+			],
+		};
 	}
 
 	return [newNodes, newNode] as const;
