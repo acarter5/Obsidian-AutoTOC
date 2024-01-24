@@ -41,6 +41,7 @@
 				nodes = appData[origin];
 			} else {
 				const pagesByDir = DataviewAPI?.pages(`"${origin}"`)
+					.filter((page) => page.file.path !== curPath)
 					.sort((page) => page.file.ctime.ts, "asc")
 					.groupBy((page) => page.file.folder)
 					.sort((group) => group.rows[0].file.ctime.ts, "asc");
@@ -51,7 +52,6 @@
 				});
 
 				nodes = internalNodes;
-				console.log("[hf]", { pagesByDir, origin, nodes });
 				if (origin) {
 					plugin.saveData({
 						...appData,
@@ -93,12 +93,6 @@
 			plugin.app.vault.on("rename", (file, oldPath) => {
 				const { path: newPath } = file;
 
-				console.log("[hf] in rename listener", {
-					oldPath,
-					newPath,
-					nodes,
-				});
-
 				if (!origin) {
 					throw new Error("[rename listener]: origin not defined");
 				}
@@ -112,8 +106,6 @@
 						...appData,
 						[origin]: nodes,
 					});
-
-					console.log("[hf]", { nodes });
 				}
 			});
 		});
