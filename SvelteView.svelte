@@ -5,11 +5,11 @@
 	import store from "./store";
 	import * as Dataview from "obsidian-dataview";
 	import { TFile, type MarkdownPostProcessorContext } from "obsidian";
-	import type { Node, FileNode, DirNode, AppData } from "./types";
+	import type { NodesById, AppData } from "./types";
 	import { updateNodes, deleteFromNodes, handleRename } from "./utils";
 
 	export let ctx: MarkdownPostProcessorContext;
-	let nodes: Record<string, FileNode | DirNode> = {};
+	let nodes: NodesById = {};
 	let origin: string | undefined;
 	let curPath: string | undefined;
 	$: rootNode = origin && nodes[origin];
@@ -23,7 +23,7 @@
 	}
 
 	onMount(() => {
-		let internalNodes: Record<string, FileNode | DirNode> = {};
+		let internalNodes: NodesById = {};
 		unsubscribe = store.plugin.subscribe(async (p) => {
 			plugin = p;
 			appData = await plugin.loadData();

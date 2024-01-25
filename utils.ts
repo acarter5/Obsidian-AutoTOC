@@ -1,16 +1,16 @@
-import type { Node, FileNode, DirNode } from "./types";
+import type { Node, FileNode, DirNode, NodesById } from "./types";
 import { NodeType } from "./types";
 import type { TAbstractFile } from "obsidian";
 
-export function isDirNode(node: FileNode | DirNode): node is DirNode {
+export function isDirNode(node: Node): node is DirNode {
 	return node.type === NodeType.DIR;
 }
 
 export const deleteFromNodes = (
 	path: string,
-	nodes: Record<string, FileNode | DirNode>,
+	nodes: NodesById,
 	origin: string
-): Record<string, FileNode | DirNode> => {
+): NodesById => {
 	const pathParts = path.split("/");
 	pathParts.pop();
 	const parentId = pathParts.join("/");
@@ -52,7 +52,7 @@ export const deleteFromNodes = (
 export const updateNodes = (
 	path: string,
 	fileOrDir: Record<string, any>,
-	nodes: Record<string, FileNode | DirNode>
+	nodes: NodesById
 ) => {
 	const pathParts = path.split("/");
 	const name = pathParts.pop() as string;
@@ -85,7 +85,7 @@ export const updateNodes = (
 		return id;
 	}, null);
 
-	const thisNode: FileNode | DirNode = isDir
+	const thisNode: Node = isDir
 		? {
 				id: path,
 				name,
@@ -163,7 +163,7 @@ export const updateNodes = (
 export const handleRename = (
 	oldPath: string,
 	newPath: string,
-	nodes: Record<string, FileNode | DirNode>,
+	nodes: NodesById,
 	skipUpdateParent = false
 ) => {
 	let newNodes = nodes;
@@ -176,7 +176,7 @@ export const handleRename = (
 	// delete node with old name
 	delete newNodes[oldPath];
 
-	const newItems: Node["items"] = [];
+	const newItems: DirNode["items"] = [];
 
 	// recursively update all descendant nodes to use new name
 	if (isDirNode(existingNode)) {

@@ -2,13 +2,13 @@
 	import { flip } from "svelte/animate";
 	import { dndzone, SHADOW_PLACEHOLDER_ITEM_ID } from "svelte-dnd-action";
 	import type MyPlugin from "./main";
-	import type { AppData, FileNode, DirNode } from "./types";
+	import type { AppData, Node, NodesById } from "./types";
 	import store from "./store";
 	import CollapseIcon from "Components/SVG/IconWrapper.svelte";
 	import { isDirNode } from "./utils";
 
-	export let nodes: Record<string, FileNode | DirNode>;
-	export let node: FileNode | DirNode | undefined;
+	export let nodes: NodesById;
+	export let node: Node | undefined;
 	export let appData: AppData;
 	export let origin: string | undefined;
 	export let id: string | undefined;

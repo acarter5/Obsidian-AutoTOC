@@ -1,12 +1,3 @@
-export type Node = {
-	id: string;
-	isDir: boolean;
-	name: string;
-	items?: { id: string }[];
-	link?: string;
-	expanded?: boolean;
-};
-
 export enum NodeType {
 	FILE = "file",
 	DIR = "dir",
@@ -27,4 +18,8 @@ export type DirNode = {
 	type: NodeType.DIR;
 };
 
-export type AppData = Record<string, Record<string, FileNode | DirNode>>;
+export type Node = FileNode | DirNode;
+
+export type NodesById = Record<string, Node>;
+
+export type AppData = Record<string, NodesById>;
