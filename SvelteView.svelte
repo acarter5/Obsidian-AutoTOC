@@ -4,30 +4,26 @@
 	import type MyPlugin from "./main";
 	import store from "./store";
 	import * as Dataview from "obsidian-dataview";
-	import {
-		TFile,
-		type MarkdownPostProcessorContext,
-		type TAbstractFile,
-	} from "obsidian";
-	import type { Node, AppData } from "./types";
+	import { TFile, type MarkdownPostProcessorContext } from "obsidian";
+	import type { Node, FileNode, DirNode, AppData } from "./types";
 	import { updateNodes, deleteFromNodes, handleRename } from "./utils";
 
 	export let ctx: MarkdownPostProcessorContext;
-	let nodes: Record<string, Node> = {};
+	let nodes: Record<string, FileNode | DirNode> = {};
 	let origin: string | undefined;
 	let curPath: string | undefined;
 	$: rootNode = origin && nodes[origin];
 
 	let plugin: MyPlugin;
 	let appData: AppData;
-	let unsubscribe;
+	let unsubscribe: () => void;
 
 	$: {
 		console.log("[hf] component", { nodes });
 	}
 
 	onMount(() => {
-		let internalNodes: Record<string, Node> = {};
+		let internalNodes: Record<string, FileNode | DirNode> = {};
 		unsubscribe = store.plugin.subscribe(async (p) => {
 			plugin = p;
 			appData = await plugin.loadData();

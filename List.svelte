@@ -2,17 +2,18 @@
 	import { flip } from "svelte/animate";
 	import { dndzone, SHADOW_PLACEHOLDER_ITEM_ID } from "svelte-dnd-action";
 	import type MyPlugin from "./main";
-	import type { AppData, Node } from "./types";
+	import type { AppData, FileNode, DirNode } from "./types";
 	import store from "./store";
 	import CollapseIcon from "Components/SVG/IconWrapper.svelte";
+	import { isDirNode } from "./utils";
 
-	export let nodes: Record<string, Node>;
-	export let node: Node | undefined;
+	export let nodes: Record<string, FileNode | DirNode>;
+	export let node: FileNode | DirNode | undefined;
 	export let appData: AppData;
 	export let origin: string | undefined;
 	export let id: string | undefined;
 
-	$: collapseExpanded = node?.expanded;
+	$: collapseExpanded = node && isDirNode(node) && node.expanded;
 	let plugin: MyPlugin;
 	store.plugin.subscribe((p) => (plugin = p));
 
@@ -36,15 +37,15 @@
 				});
 		}
 	}
-	function handleDndConsider(e) {
+	function handleDndConsider(e: any) {
 		console.log("[hf] dnd consider", { e, node });
-		if (node) {
+		if (node && isDirNode(node)) {
 			node.items = e.detail.items;
 		}
 	}
-	async function handleDndFinalize(e) {
+	async function handleDndFinalize(e: any) {
 		console.log("[hf] dnd finalize", { e, node });
-		if (node) {
+		if (node && isDirNode(node)) {
 			node.items = e.detail.items;
 		}
 		nodes = { ...nodes };
@@ -58,7 +59,7 @@
 </script>
 
 {#if node}
-	{#if node.link}
+	{#if !isDirNode(node)}
 		<div class="indent">
 			<a
 				href={node.link}

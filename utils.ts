@@ -2,7 +2,7 @@ import type { Node, FileNode, DirNode } from "./types";
 import { NodeType } from "./types";
 import type { TAbstractFile } from "obsidian";
 
-function isDirNode(node: FileNode | DirNode): node is DirNode {
+export function isDirNode(node: FileNode | DirNode): node is DirNode {
 	return node.type === NodeType.DIR;
 }
 
@@ -10,7 +10,7 @@ export const deleteFromNodes = (
 	path: string,
 	nodes: Record<string, FileNode | DirNode>,
 	origin: string
-): Record<string, Node> => {
+): Record<string, FileNode | DirNode> => {
 	const pathParts = path.split("/");
 	pathParts.pop();
 	const parentId = pathParts.join("/");
@@ -69,7 +69,6 @@ export const updateNodes = (
 		if (!nodes[id]) {
 			nodes[id] = {
 				id,
-				isDir: true,
 				expanded: true,
 				name: cur,
 				items: [],
@@ -90,7 +89,6 @@ export const updateNodes = (
 		? {
 				id: path,
 				name,
-				isDir: true,
 				type: NodeType.DIR,
 				expanded: true,
 				items: pages.values.map((page: { file: TAbstractFile }) => ({
@@ -101,7 +99,6 @@ export const updateNodes = (
 		: {
 				id: path,
 				name,
-				isDir: false,
 				type: NodeType.FILE,
 				link: path,
 				// eslint-disable-next-line no-mixed-spaces-and-tabs
@@ -116,7 +113,7 @@ export const updateNodes = (
 			const { items } = parentNode;
 			const firstDirIdx = items
 				.map(({ id }) => nodes[id])
-				.findIndex((node) => node.isDir);
+				.findIndex((node) => isDirNode(node));
 			if (firstDirIdx >= 0) {
 				parentNode.items = [
 					...items.slice(0, firstDirIdx),
@@ -152,7 +149,6 @@ export const updateNodes = (
 				id: page.file.path,
 				link: page.file.path,
 				name: page.file.name,
-				isDir: false,
 				type: NodeType.FILE,
 			})
 		);
@@ -189,7 +185,7 @@ export const handleRename = (
 			const oldItemNode = newNodes[oldItemPath];
 			const itemName = oldItemPath.split("/").pop();
 			const newItemPath = [newPath, itemName].join("/");
-			if (oldItemNode.isDir) {
+			if (isDirNode(oldItemNode)) {
 				const [updatedNodes] = handleRename(
 					oldItemPath,
 					newItemPath,
@@ -204,7 +200,6 @@ export const handleRename = (
 					id: newItemPath,
 					name: itemName as string,
 					link: newItemPath,
-					isDir: false,
 					type: NodeType.FILE,
 				};
 			}
